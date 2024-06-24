@@ -1,5 +1,4 @@
-const fs = require("fs");
-const PRODUCTS = require("../data/db.json");
+const Product = require("../models/product.model");
 
 function makeId(length = 5) {
   const characters =
@@ -12,55 +11,158 @@ function makeId(length = 5) {
   return result;
 }
 
-function getProducts(req, res) {
-  res.status(202).json(PRODUCTS);
-}
-
-function getProductById(req, res) {
-  const { id } = req.params;
-  const product = PRODUCTS.find((item) => item._id == id);
-  if (!product) return res.status(404).json({ message: "Product didnt found" });
-  res.send(product);
-}
-
-function deleteProduct(req, res) {
-  const { id } = req.params;
-  const products = [...PRODUCTS];
-  const productIndex = products.findIndex((product) => product._id == id);
-  if (productIndex === -1)
-    return res.status(404).json({ message: "Product didnt found" });
-
-  products.splice(productIndex, 1);
-
-  fs.writeFileSync("./data/db.json", JSON.stringify(products));
-  res.status(200).json({ message: "Item deleted successful" });
-}
-function createProduct(req, res) {
-  const newId = makeId();
-  const { body: newProduct } = req;
-  newProduct._id = newId;
-  const updatedProducts = [...PRODUCTS, newProduct];
-  fs.writeFileSync("./data/db.json", JSON.stringify(updatedProducts));
-  res.status(201).json({ message: "Item Added successful", item: newProduct });
-}
-function editProduct(req, res) {
-  const { id } = req.params; //
-  const { body: newProduct } = req; // object to replace
-  newProduct._id = id;
-
-  const productIndex = PRODUCTS.findIndex((product) => product._id == id);
-  if (productIndex === -1) {
-    return res.status(404).send("Product not found");
+function _makeCriteria(query) {
+  const criteria = {};
+  if (query["name"]) criteria.name = { $regex: query["name"], $options: "i" };
+  if (!isNaN(query.minPrice) && query.minPrice !== "") {
+    criteria.price = criteria.price || {};
+    criteria.price.$gte = Number(query.minPrice);
   }
-  const newProducts = [...PRODUCTS];
-  newProducts[productIndex] = newProduct;
-  fs.writeFileSync("./data/db.json", JSON.stringify(newProducts));
 
-  res.status(200).json({ message: "Item updated successful" });
+  if (!isNaN(query.maxPrice) && query.maxPrice !== "") {
+    criteria.price = criteria.price || {};
+    criteria.price.$lte = Number(query.maxPrice);
+  }
+  if (query["inStock"] === "true") criteria.quantity = { $gt: 0 };
+  return criteria;
 }
+
+async function getProductsCount(req, res) {
+  const { query } = req;
+  const criteria = _makeCriteria(query);
+
+  try {
+    const count = await Product.countDocuments(criteria);
+    res.json({ count });
+  } catch (err) {
+    console.log(
+      "robot.controller, getRobotsCount. Error while getting robots count",
+      err
+    );
+    res.status(500).json({ message: err.message });
+  }
+}
+async function getProducts(req, res) {
+  const { query } = req;
+  const limit = !isNaN(query.limit) ? Number(query.limit) : 6;
+  const skip = !isNaN(query.skip) ? Number(query.skip) : 0;
+  const criteria = _makeCriteria(query);
+  console.log(criteria);
+  try {
+    const products = await Product.find(criteria)
+      .skip(skip * limit)
+      .limit(limit);
+    if (!products) res.status(404).json({ message: err.message });
+    res.json(products);
+  } catch (err) {
+    console.log(
+      "robot.controller, getProduct. Error while getting robots",
+      err
+    );
+    res.status(500).json({ message: err.message });
+  }
+}
+
+async function getProductById(req, res) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+    if (!product)
+      return res.status(404).json({ message: "Product didnt found" });
+    res.status(200).json(product);
+  } catch (error) {
+    return res.status(404).json({ message: "Product didnt found" });
+  }
+}
+
+async function deleteProduct(req, res) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findByIdAndDelete(id);
+    if (!product)
+      return res.status(404).json({ message: "Product didnt found" });
+    res.status(202).json({ message: "Product Deleted" });
+  } catch (error) {
+    return res.status(404).json({ message: "Product didnt found" });
+  }
+}
+
+async function createProduct(req, res) {
+  const { body: newProduct } = req;
+  try {
+    const newRobot = new Product(newProduct);
+    const savedRobot = await newRobot.save();
+    res.status(201).json(savedRobot);
+  } catch (err) {
+    console.error(err);
+    if (err.name === "ValidationError") {
+      // Mongoose validation error
+      console.log(`robot.controller, createRobot. ${err.message}`);
+      res.status(400).json({ message: err.message });
+    } else {
+      // Other types of errors
+      console.log(`robot.controller, createRobot. ${err.message}`);
+      res.status(500).json({ message: "Server error while creating robot" });
+    }
+  }
+}
+
+async function editProduct(req, res) {
+  const { id } = req.params;
+  const newProduct = req.body;
+  // const { name, category, price } = req.body;
+
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      newProduct,
+      { new: true, runValidators: true } // validate before updating
+    );
+
+    if (!updatedProduct) {
+      console.log(
+        `robot.controller, updateRobot. Robot not found with id: ${id}`
+      );
+      return res.status(404).json({ message: "Robot not found" });
+    }
+
+    res.json(updatedProduct);
+  } catch (err) {
+    console.log(
+      `robot.controller, updateRobot. Error while updating robot with id: ${id}`,
+      err
+    );
+
+    if (err.name === "ValidationError") {
+      // Mongoose validation error
+      console.log(`robot.controller, updateRobot. ${err.message}`);
+      res.status(400).json({ message: err.message });
+    } else {
+      // Other types of errors
+      console.log(`robot.controller, updateRobot. ${err.message}`);
+      res.status(500).json({ message: "Server error while updating robot" });
+    }
+  }
+}
+// function editProduct(req, res) {
+//   const { id } = req.params; //
+//   const { body: newProduct } = req; // object to replace
+//   newProduct._id = id;
+
+//   const productIndex = PRODUCTS.findIndex((product) => product._id == id);
+//   if (productIndex === -1) {
+//     return res.status(404).send("Product not found");
+//   }
+//   const newProducts = [...PRODUCTS];
+//   newProducts[productIndex] = newProduct;
+//   fs.writeFileSync("./data/db.json", JSON.stringify(newProducts));
+
+//   res.status(200).json({ message: "Item updated successful" });
+// }
 
 module.exports = {
   getProducts,
+  getProductsCount,
   getProductById,
   deleteProduct,
   createProduct,
