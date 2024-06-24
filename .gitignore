@@ -1,1 +1,12 @@
-.node_modules
+# .gitignore
+
+# Dependency directories
+node_modules/
+
+# Build directories
+dist/
+build/
+
+# Others
+.DS_Store
+.env
