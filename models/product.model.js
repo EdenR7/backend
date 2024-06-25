@@ -7,9 +7,15 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    category: {
-      type: String,
+    categories: {
+      type: [String],
       required: true,
+      validate: {
+        validator: function (value) {
+          return Array.isArray(value) && value.length > 0;
+        },
+        message: "Categories must be a non-empty array of strings.",
+      },
     },
     quantity: {
       type: Number,

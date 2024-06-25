@@ -1,16 +1,5 @@
 const Product = require("../models/product.model");
 
-function makeId(length = 5) {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    result += characters[randomIndex];
-  }
-  return result;
-}
-
 function _makeCriteria(query) {
   const criteria = {};
   if (query["name"]) criteria.name = { $regex: query["name"], $options: "i" };
@@ -24,6 +13,7 @@ function _makeCriteria(query) {
     criteria.price.$lte = Number(query.maxPrice);
   }
   if (query["inStock"] === "true") criteria.quantity = { $gt: 0 };
+  if (query["categories"]) console.log(query["categories"]);
   return criteria;
 }
 
@@ -47,7 +37,6 @@ async function getProducts(req, res) {
   const limit = !isNaN(query.limit) ? Number(query.limit) : 6;
   const skip = !isNaN(query.skip) ? Number(query.skip) : 0;
   const criteria = _makeCriteria(query);
-  console.log(criteria);
   try {
     const products = await Product.find(criteria)
       .skip(skip * limit)
