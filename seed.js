@@ -14,7 +14,7 @@ const products = [
   {
     name: "Headphones",
     price: 99.99,
-    quantity: 150,
+    quantity: 0,
     category: "Electronics",
   },
   {

@@ -55,11 +55,12 @@ async function getProducts(req, res) {
     if (!products) res.status(404).json({ message: err.message });
     res.json(products);
   } catch (err) {
-    console.log(
-      "robot.controller, getProduct. Error while getting robots",
-      err
-    );
-    res.status(500).json({ message: err.message });
+    if (err.name === "CastError") {
+      `product.controller, CastError getProducts something went wrong`;
+      return res.status(404).json({ message: "Product didnt found" });
+    }
+    console.log(`product.controller, getProducts Server Error something went `);
+    return res.status(500).json({ message: "Server Error" });
   }
 }
 
@@ -71,7 +72,14 @@ async function getProductById(req, res) {
       return res.status(404).json({ message: "Product didnt found" });
     res.status(200).json(product);
   } catch (error) {
-    return res.status(404).json({ message: "Product didnt found" });
+    if (error.name === "CastError") {
+      `product.controller, CastError getById something went wrong with robot id:${id}`;
+      return res.status(404).json({ message: "Product didnt found" });
+    }
+    console.log(
+      `product.controller, getById something went wrong with robot id:${id}`
+    );
+    return res.status(500).json({ message: "Server Error" });
   }
 }
 
@@ -83,7 +91,14 @@ async function deleteProduct(req, res) {
       return res.status(404).json({ message: "Product didnt found" });
     res.status(202).json({ message: "Product Deleted" });
   } catch (error) {
-    return res.status(404).json({ message: "Product didnt found" });
+    if (error.name === "CastError") {
+      `product.controller, CastError deleteProduct something went wrong with robot id:${id}`;
+      return res.status(404).json({ message: "Product didnt found" });
+    }
+    console.log(
+      `product.controller, deleteProduct something went wrong with robot id:${id}`
+    );
+    return res.status(500).json({ message: "Server Error" });
   }
 }
 
@@ -96,13 +111,11 @@ async function createProduct(req, res) {
   } catch (err) {
     console.error(err);
     if (err.name === "ValidationError") {
-      // Mongoose validation error
-      console.log(`robot.controller, createRobot. ${err.message}`);
+      console.log(`product.controller, createProduct. ${err.message}`);
       res.status(400).json({ message: err.message });
     } else {
-      // Other types of errors
-      console.log(`robot.controller, createRobot. ${err.message}`);
-      res.status(500).json({ message: "Server error while creating robot" });
+      console.log(`product.controller, createProduct. ${err.message}`);
+      res.status(500).json({ message: "Server error while creating product" });
     }
   }
 }
@@ -110,7 +123,6 @@ async function createProduct(req, res) {
 async function editProduct(req, res) {
   const { id } = req.params;
   const newProduct = req.body;
-  // const { name, category, price } = req.body;
 
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -128,18 +140,17 @@ async function editProduct(req, res) {
 
     res.json(updatedProduct);
   } catch (err) {
-    console.log(
-      `robot.controller, updateRobot. Error while updating robot with id: ${id}`,
-      err
-    );
-
+    if (err.name === "CastError") {
+      `product.controller, CastError editProduct something went wrong with robot id:${id}`;
+      return res.status(404).json({ message: "Product didnt found" });
+    }
     if (err.name === "ValidationError") {
       // Mongoose validation error
-      console.log(`robot.controller, updateRobot. ${err.message}`);
+      console.log(`robot.controller, editProduct. ${err.message}`);
       res.status(400).json({ message: err.message });
     } else {
       // Other types of errors
-      console.log(`robot.controller, updateRobot. ${err.message}`);
+      console.log(`robot.controller, editProduct. ${err.message}`);
       res.status(500).json({ message: "Server error while updating robot" });
     }
   }
