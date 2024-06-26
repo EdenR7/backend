@@ -13,7 +13,10 @@ function _makeCriteria(query) {
     criteria.price.$lte = Number(query.maxPrice);
   }
   if (query["inStock"] === "true") criteria.quantity = { $gt: 0 };
-  if (query["categories"]) console.log(query["categories"]);
+  if (query["categories"]) {
+    const categoriesArr = query["categories"].split("%");
+    criteria.categories = { $all: categoriesArr };
+  }
   return criteria;
 }
 
@@ -42,14 +45,14 @@ async function getProducts(req, res) {
       .skip(skip * limit)
       .limit(limit);
     if (!products) res.status(404).json({ message: err.message });
-    res.json(products);
+    res.status(200).json(products);
   } catch (err) {
     if (err.name === "CastError") {
-      `product.controller, CastError getProducts something went wrong`;
-      return res.status(404).json({ message: "Product didnt found" });
+      console.error("product.controller, getProducts, CastError", err);
+      return res.status(400).json({ message: "Invalid query parameter" });
     }
-    console.log(`product.controller, getProducts Server Error something went `);
-    return res.status(500).json({ message: "Server Error" });
+    console.error("product.controller, getProducts, Server Error", err);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
@@ -62,11 +65,11 @@ async function getProductById(req, res) {
     res.status(200).json(product);
   } catch (error) {
     if (error.name === "CastError") {
-      `product.controller, CastError getById something went wrong with robot id:${id}`;
+      `product.controller, CastError getById something went wrong with product id ${error}`;
       return res.status(404).json({ message: "Product didnt found" });
     }
     console.log(
-      `product.controller, getById something went wrong with robot id:${id}`
+      `product.controller, getById something went wrong with product id  ${error}`
     );
     return res.status(500).json({ message: "Server Error" });
   }
@@ -76,16 +79,24 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
     const product = await Product.findByIdAndDelete(id);
-    if (!product)
+    if (!product) {
+      console.log(
+        `product.controller, deleteProduct, Product not found with id: ${id}`
+      );
       return res.status(404).json({ message: "Product didnt found" });
+    }
     res.status(202).json({ message: "Product Deleted" });
   } catch (error) {
     if (error.name === "CastError") {
-      `product.controller, CastError deleteProduct something went wrong with robot id:${id}`;
+      console.error(
+        `product.controller, deleteProduct, CastError, Invalid product id`,
+        error
+      );
       return res.status(404).json({ message: "Product didnt found" });
     }
-    console.log(
-      `product.controller, deleteProduct something went wrong with robot id:${id}`
+    console.error(
+      `product.controller, deleteProduct, Server Error, Error with product id`,
+      error
     );
     return res.status(500).json({ message: "Server Error" });
   }
