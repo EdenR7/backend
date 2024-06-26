@@ -14,8 +14,9 @@ function _makeCriteria(query) {
   }
   if (query["inStock"] === "true") criteria.quantity = { $gt: 0 };
   if (query["categories"]) {
-    const categoriesArr = query["categories"].split("%");
-    criteria.categories = { $all: categoriesArr };
+    const categoriesArr = query["categories"].split(",");
+    console.log(categoriesArr);
+    criteria.categories = { $all: categoriesArr.splice(1) };
   }
   return criteria;
 }
