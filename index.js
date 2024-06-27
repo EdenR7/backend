@@ -1,20 +1,3 @@
-// const express = require("express");
-// const app = express();
-// const cors = require("cors");
-// const PORT = process.env.PORT || 3000;
-
-// //MIDDLEWARE
-// app.use(express.json());
-// app.use(cors());
-
-// //ROUTES
-// const productRoutes = require("./routes/product.route");
-// app.use("/api/product", productRoutes); // When you reached this api go to this routes
-
-// // START SERVER
-// app.listen(PORT, () => {
-//   console.log(`Server Run at ${PORT}`);
-// });
 const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
@@ -39,12 +22,24 @@ async function main() {
       origin: "http://localhost:5173",
     })
   );
+  function waitMiddleWare(req, res, next) {
+    setTimeout(() => {
+      console.log("Global middleware");
+      console.log("3 seconds of pause activated");
+      next();
+    }, 3000);
+  }
+  // app.use(waitMiddleWare); // Now we define that for every request we will use this middleWare
+
+  function addBabaToReq(req, res, next) {
+    req.user = "baba";
+    console.log("Baba added");
+    next();
+  }
 
   // Routes
-  // const robotRoutes = require("./routes/robot.route");
-  // app.use("/api/robot", robotRoutes);
   const productRoutes = require("./routes/product.route");
-  app.use("/api/product", productRoutes);
+  app.use("/api/product", addBabaToReq, productRoutes); // add a local middleware between the use of the productRoutes
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
