@@ -40,10 +40,11 @@ async function getProducts(req, res) {
   const { query } = req;
   const limit = !isNaN(query.limit) ? Number(query.limit) : 6;
   const skip = !isNaN(query.skip) ? Number(query.skip) : 0;
+  const page = !isNaN(query.page) ? Number(query.page) : 1;
   const criteria = _makeCriteria(query);
   try {
     const products = await Product.find(criteria)
-      .skip(skip * limit)
+      .skip((page - 1) * limit)
       .limit(limit);
     if (!products) res.status(404).json({ message: err.message });
     res.status(200).json(products);
@@ -156,21 +157,6 @@ async function editProduct(req, res) {
     }
   }
 }
-// function editProduct(req, res) {
-//   const { id } = req.params; //
-//   const { body: newProduct } = req; // object to replace
-//   newProduct._id = id;
-
-//   const productIndex = PRODUCTS.findIndex((product) => product._id == id);
-//   if (productIndex === -1) {
-//     return res.status(404).send("Product not found");
-//   }
-//   const newProducts = [...PRODUCTS];
-//   newProducts[productIndex] = newProduct;
-//   fs.writeFileSync("./data/db.json", JSON.stringify(newProducts));
-
-//   res.status(200).json({ message: "Item updated successful" });
-// }
 
 module.exports = {
   getProducts,

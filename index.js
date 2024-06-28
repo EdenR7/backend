@@ -22,13 +22,13 @@ async function main() {
       origin: "http://localhost:5173",
     })
   );
-  function waitMiddleWare(req, res, next) {
-    setTimeout(() => {
-      console.log("Global middleware");
-      console.log("3 seconds of pause activated");
-      next();
-    }, 3000);
-  }
+  // function waitMiddleWare(req, res, next) {
+  //   setTimeout(() => {
+  //     console.log("Global middleware");
+  //     console.log("3 seconds of pause activated");
+  //     next();
+  //   }, 3000);
+  // }
   // app.use(waitMiddleWare); // Now we define that for every request we will use this middleWare
 
   function addBabaToReq(req, res, next) {
@@ -39,7 +39,8 @@ async function main() {
 
   // Routes
   const productRoutes = require("./routes/product.route");
-  app.use("/api/product", addBabaToReq, productRoutes); // add a local middleware between the use of the productRoutes
+  app.use("/api/product", productRoutes); // add a local middleware between the use of the productRoutes
+  // app.use("/api/product", addBabaToReq, productRoutes); // add a local middleware between the use of the productRoutes
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
