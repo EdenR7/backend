@@ -17,4 +17,8 @@ function verifyToken(req, res, next) {
   }
 }
 
+function verifyUserExists(params) {
+  
+}
+
 module.exports = { verifyToken };
