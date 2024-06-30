@@ -11,6 +11,7 @@ dotenv.config(); // Load config
 async function main() {
   // Connect to database
   await connectDB();
+  const { verifyToken } = require("./middlewares/auth.middleware");
 
   // MIDDLEWARES
   // parse json body in request (for POST, PUT, PATCH requests)
@@ -38,9 +39,15 @@ async function main() {
   }
 
   // Routes
+  const authRoutes = require("./routes/auth.route");
   const productRoutes = require("./routes/product.route");
-  app.use("/api/product", productRoutes); // add a local middleware between the use of the productRoutes
-  // app.use("/api/product", addBabaToReq, productRoutes); // add a local middleware between the use of the productRoutes
+  const protectedRoutes = require("./routes/protected.route");
+  const userRoutes = require("./routes/user.route");
+
+  app.use("/api/product", productRoutes);
+  app.use("/api/auth", authRoutes);
+  app.use("/api/protected", verifyToken, protectedRoutes);
+  app.use("/api/user", userRoutes);
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
