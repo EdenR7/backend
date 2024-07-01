@@ -47,7 +47,7 @@ async function login(req, res) {
 
     // Generate JWT token containing user id
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "5h",
     });
 
     // Send token in response to the client, not the user object!
