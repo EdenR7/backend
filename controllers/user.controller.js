@@ -83,6 +83,8 @@ async function createProduct(req, res) {
 async function deleteProduct(req, res) {
   const { id } = req.params;
   const { userId } = req;
+  console.log(req);
+
   try {
     const product = await Product.findById(id);
     if (!product) {
@@ -91,6 +93,7 @@ async function deleteProduct(req, res) {
       );
       return res.status(404).json({ message: "Product didnt found" });
     }
+
     if (product.user.toString() !== userId.toString()) {
       return res.status(400).json({ message: "The user IDs not match !" });
     }
